@@ -1,0 +1,71 @@
+1. в папке с доменном именем установить laravel:
+
+    composer create-project --prefer-dist laravel/laravel
+
+2. в папке .env редактируем(соединение с БД):
+
+    DB_CONNECTION=mysql
+    DB_HOST=127.0.0.1
+    DB_PORT=3306
+    DB_DATABASE=laravel_mini
+    DB_USERNAME=root
+    DB_PASSWORD=root
+
+3. папку public делаем главной страницей:
+    1) OpenServer->Настройки->Домены->Упр.доменами(Ручное+Автопоиск)->
+    ->имя_домена(laravel.mini)->папка_домена(\laravel.mini\public)
+
+    2) .htaccess(создаем, если нет)-> пишем:
+    RewriteEngine On
+    RewriteRule (.*) public/$1
+
+4.создаются Миграции в app\models и database
+    php artisan make:model Phonebook -m
+    вносим изменения\добавления стобцов в таблицу в database\migrations:
+    public function up(){}
+
+5. Мигрируем в таблицу БД:
+    php artisan migrate
+
+6. Заполнение тестовыми данными
+    1) Создаем seeder(database\seeders):
+    php artisan make:seeder PhonebookSeeder
+    2) Создаем factories(фабрика моделей-для множества данных):
+    (database\factories)
+    php artisan make:factory PhonebookFactory -m Phonebook
+    3) Генерируем через библиотеку Faker:
+        a)устанавливаем faker:
+        composer require fzaninotto/faker
+        б)добавляем в PhoneFactory.php какие столбцы будем генерировать:
+        public function definition()
+            {
+                return [
+                    'name' => $faker->name(),
+                    'email' => $faker->email,
+                    'phone' => $faker->e164PhoneNumber,
+                    'created_at' => $faker->dateTime(),
+                    'updated_at' => $faker->dateTime(),
+                ];
+        г) вызываем фабрику PhonebookSeeder(100 сгенерированных данных):
+        public function run()
+            {
+                Phonebook::factory(100)->create();
+            }
+        д) запускаем фабрику(консоль):
+        php artisan db:seed --class=PhonebookSeeder
+
+7. Вывод записей с пагинацией
+    - меняем web.php:
+        Route::get('/', 'MainController@index');
+    - создаем MainController.php(app\http\controllers):
+        php artisan make:controller MainController
+    - в MainController.php создаем метод получения всех записей из БД
+        $users = Phonebook::all();
+        и др.
+    - home.blade.php(resources\views):
+        ставим в шаблон {{ $user->id }} и т.д.
+    - пагинация в home.blade.php:
+        {{ $users->links() }}
+
+8. Поиск по записям
+
